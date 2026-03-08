@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+
+# Maarif-Gen Specific
+maarif_gen.db
+program/*.pdf
+logs/*.log
+logs/
+SoruBankasi/
+processed_data/
+temp/
+md/
+
+# OS
+.DS_Store
+.claude/
+.gemini/
+.agent/
