@@ -6,14 +6,13 @@ __pycache__/
 .env
 
 # Maarif-Gen Specific
-maarif_gen.db
+# maarif_gen.db is included per user request
 program/*.pdf
 logs/*.log
 logs/
 SoruBankasi/
 processed_data/
 temp/
-md/
 
 # OS
 .DS_Store
