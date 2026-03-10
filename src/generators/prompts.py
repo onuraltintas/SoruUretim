@@ -12,10 +12,6 @@ QUESTION_SYSTEM_MSG = """
 14-18 yaş grubu öğrencilere yönelik açık uçlu soru ve değerlendirme rubriği üreten bir 
 ölçme değerlendirme uzmanısın.
 
-- Sorularda gerekirse grafik, tablo, figür, şablon gibi görsellerin kullanılmasını kurgula. 
-Eğer soru bir görsel gerektiriyorsa, bu görseli çizecek bir tasarımcıya veya Midjourney/DALL-E 
-gibi bir yapay zekâya verilmek üzere GÖRSEL ÜRETİM PROMPTU (detailed image generation prompt) yaz.
-
 - Sorular ölçme-değerlendirmede sorunun kalitesini ölçmeye yarayan güvenilirlik, 
 geçerlik, vb. kriterlere uygun oluşturulsun.
 
@@ -35,7 +31,7 @@ net ve en fazla 2-3 cümle uzunluğunda olmalıdır. Bağlamı (senaryoyu)
 sorunun içinde tekrar edip öğrencinin okuma yükünü artırma. Sadece ölçülmek 
 istenen beceriyi hedefleyen yalın bir yönerge veya soru cümlesi kur.
 
-- KESİNLİKLE DİKKAT: Yanıtına asla "Düşünme Süreci", "Thinking Process", "<thought>", "Planlama" veya içsel akıl yürütme (reasoning) blokları ekleme. SADECE senden istenen JSON çıktısını ver. Başka hiçbir açıklama, giriş veya çıkış cümlesi yazma.
+- SADECE senden istenen JSON çıktısını ver. Başka hiçbir açıklama, giriş veya çıkış cümlesi yazma.
 
 Cevabını SADECE geçerli JSON formatında ver; başka hiçbir metin ekleme. JSON şeması:
 {
@@ -53,7 +49,8 @@ CONTEXT_SYSTEM_MSG = """
 14-18 yaş grubu öğrencilere yönelik gerçek hayat bağlamı/senaryosu oluşturan bir 
 ölçme değerlendirme uzmanısın.
 
-- Örnekler: 1 - Yaşamımızın pek çok anında maddeler farklı değişimlere uğrar. Örneğin odun ateşte yandığında duman ve yeni
+- Örnekler: 
+1 - Yaşamımızın pek çok anında maddeler farklı değişimlere uğrar. Örneğin odun ateşte yandığında duman ve yeni
 maddeler ortaya çıkar, sirke ile karbonat karıştırıldığında kabarcıklar oluşur, kesilen elma bir süre sonra kararır. Gün
 ışığında çamaşırların renginin açılması ya da bozulmuş yiyeceklerin kötü koku yayması da kimyasal değişimlere
 örnektir. Maddenin ya da maddelerin yapısının değişerek özellikleri farklı yeni maddeler oluşturmasına kimyasal
@@ -111,9 +108,7 @@ yönelik Görev (Task) veya Soru cümlesi EKLEME. Bırak alt soruları daha sonr
 başka bir aşamada üreteceğiz. Sen sadece düz metin olarak bilgi veya durum bildiren, 
 saf uyarıcı (stimulus) senaryosunu sağla.
 
-- KESİNLİKLE DİKKAT: Yanıtına asla "Düşünme Süreci", "Thinking Process", "<thought>", "Planlama" veya içsel akıl yürütme (reasoning) blokları ekleme. Bu kurala kesinlikle uy.
-
-- SADECE bağlam metnini ve (varsa) en alta görsel üretim promptunu ver; başka hiçbir giriş/çıkış cümlesi, açıklama veya düşünce süreci yazma.
+- SADECE bağlam metnini ve (varsa) en alta görsel üretim promptunu ver. Başka hiçbir açıklama, giriş veya çıkış cümlesi ekleme.
 
 """
 

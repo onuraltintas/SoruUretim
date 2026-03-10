@@ -87,7 +87,6 @@ docker rm -f vllm_server ; docker run -d --gpus all \
   --name vllm_server \
   vllm/vllm-openai:cu130-nightly-aarch64 \
   "Qwen/Qwen3.5-122B-A10B-GPTQ-Int4" \
-  --max-model-len 4096 \
   --quantization gptq \
   --dtype float16 \
   --gpu-memory-utilization 0.70 \

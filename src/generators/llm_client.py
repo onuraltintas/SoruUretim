@@ -108,16 +108,6 @@ class LLMClient:
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
 
-    def _filter_reasoning(self, text: str) -> str:
-        """Modelin içsel akıl yürütme (thought/reasoning) bloklarını temizler."""
-        # 1. <thought> ... </thought> bloklarını temizle
-        text = re.sub(r"<thought>.*?</thought>", "", text, flags=re.DOTALL)
-        # 2. 'Thinking Process:', 'Düşünme Süreci:' gibi başlıkları ve altındaki bloğu temizle
-        # Genellikle bu kısımlar metnin başında olur ve boş satırla biter
-        text = re.sub(r"^(?:Thinking Process|Düşünme Süreci|Reasoning):.*?(?:\n\s*\n|$)", "", text, flags=re.DOTALL | re.IGNORECASE)
-        # 3. Kalan döküntüleri (başıboş düşünce notları vb.) temizle
-        return text.strip()
-
     def _chat(self, messages: list[dict], temperature: float = 0.7) -> str:
         """Chat completion isteği gönderir; ham metin yanıtını döndürür."""
         payload = {
@@ -128,8 +118,20 @@ class LLMClient:
         url = f"{self.base_url}/chat/completions"
         resp = requests.post(url, json=payload, headers=self._headers(), timeout=self.timeout)
         resp.raise_for_status()
-        raw_text = resp.json()["choices"][0]["message"]["content"]
-        return self._filter_reasoning(raw_text)
+        
+        full_data = resp.json()
+        message = full_data["choices"][0]["message"]
+        
+        # vLLM reasoning-parser kullanıldığında veriler şu key'lerde olabilir:
+        # 1. content: Asıl cevap
+        # 2. reasoning_content: Düşünme süreci (DeepSeek/vLLM standart)
+        # 3. reasoning: Bazı sürümlerde alternatif key
+        
+        res = message.get("content")
+        
+        # Eğer content boşsa ama düşünme süreci varsa, ne olduğunu anlamak için 
+        # şimdilik loglara bakıyoruz ama kullanıcıya dönen kısmı garantiye alalım.
+        return res if res is not None else ""
 
     @staticmethod
     def _extract_json(text: str) -> dict:

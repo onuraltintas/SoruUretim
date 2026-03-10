@@ -13,7 +13,7 @@ from src.generators.prompts import QUESTION_SYSTEM_MSG
 import config
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -132,7 +132,7 @@ def append_to_subject_docx(subject_name, outcome, components, questions):
     
     return filepath
 
-def append_to_finetuning_dataset(client, subject_name, outcome, components, questions, generated_context, impl_guide, rubric_points):
+def append_to_finetuning_dataset(client, subject_name, outcome, components, questions, generated_context, impl_guide, rubric_points, context_elapsed):
     """Saves the prompt and result in JSONL format for future LLM fine-tuning."""
     os.makedirs("SoruBankasi", exist_ok=True)
     filepath = os.path.join("SoruBankasi", "finetune_dataset.jsonl")
@@ -165,10 +165,54 @@ def append_to_finetuning_dataset(client, subject_name, outcome, components, ques
                 "metadata": {
                     "subject": subject_name,
                     "code": outcome['code'],
-                    "component": comp_code
+                    "component": comp_code,
+                    "question_elapsed_time": q_data.get('_elapsed'),
+                    "context_elapsed_time": context_elapsed
                 }
             }
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def save_questions_to_db(subject_id, grade_id, unit_id, outcome, components, questions, generated_context, context_elapsed):
+    """Saves generated questions to the SQLite database."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        for comp in components:
+            comp_code = comp['code']
+            q_data = questions.get(comp_code)
+
+            # Skip skipped or non-existent questions
+            if not q_data or q_data.get('_skipped'):
+                continue
+
+            cursor.execute("""
+                INSERT INTO questions (
+                    subject_id, grade_id, unit_id, outcome_id, component_id, 
+                    context, question_text, rubric, correct_answer_summary, 
+                    cognitive_level, elapsed_time, context_elapsed_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                subject_id,
+                grade_id,
+                unit_id,
+                outcome['id'],
+                comp['id'],
+                generated_context,
+                q_data.get('question_text', ''),
+                json.dumps(q_data.get('rubric', []), ensure_ascii=False),
+                q_data.get('correct_answer_summary', ''),
+                q_data.get('cognitive_level', ''),
+                q_data.get('_elapsed'),
+                context_elapsed
+            ))
+        conn.commit()
+    except sqlite3.Error as e:
+        st.error(f"Veritabanına kaydedilirken hata oluştu: {e}")
+    finally:
+        conn.close()
+
 
 
 def _text_height(text: str, min_height: int = 150) -> int:
@@ -594,10 +638,24 @@ if st.session_state.generated_questions:
             questions=st.session_state.generated_questions,
             generated_context=st.session_state.generated_context,
             impl_guide=impl_guide,
-            rubric_points=rubric_points
+            rubric_points=rubric_points,
+            context_elapsed=st.session_state.get('context_elapsed')
         )
         
-        st.success(f"Sorular başarıyla '{saved_file}' ve 'finetune_dataset.jsonl' (.jsonl veri seti) dosyalarına EKLENDİ!")
+        # Veritabanına kaydet
+        save_questions_to_db(
+            subject_id=st.session_state.s_subj,
+            grade_id=st.session_state.s_grade,
+            unit_id=st.session_state.s_unit,
+            outcome=outcome,
+            components=components,
+            questions=st.session_state.generated_questions,
+            generated_context=st.session_state.generated_context,
+            context_elapsed=st.session_state.get('context_elapsed')
+        )
+        
+        st.success(f"Sorular başarıyla '{saved_file}', 'finetune_dataset.jsonl' ve veritabanına EKLENDİ!")
+
         
     # Her ihtimale karşı güncel dosyayı indirme butonu
     current_file_path = os.path.join("SoruBankasi", f"{subject_name}.docx")

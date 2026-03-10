@@ -78,12 +78,36 @@ def main():
         FOREIGN KEY (outcome_id) REFERENCES outcomes (id)
     );"""
 
+    sql_create_questions_table = """
+    CREATE TABLE IF NOT EXISTS questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject_id INTEGER NOT NULL,
+        grade_id INTEGER NOT NULL,
+        unit_id INTEGER NOT NULL,
+        outcome_id INTEGER NOT NULL,
+        component_id INTEGER,
+        context TEXT,
+        question_text TEXT NOT NULL,
+        rubric TEXT, -- Store as JSON string
+        correct_answer_summary TEXT,
+        cognitive_level TEXT,
+        elapsed_time REAL,
+        context_elapsed_time REAL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (subject_id) REFERENCES subjects (id),
+        FOREIGN KEY (grade_id) REFERENCES grades (id),
+        FOREIGN KEY (unit_id) REFERENCES units (id),
+        FOREIGN KEY (outcome_id) REFERENCES outcomes (id),
+        FOREIGN KEY (component_id) REFERENCES components (id)
+    );"""
+
     # Indexes for performance (covering common JOIN columns)
     sql_create_indexes = [
         "CREATE INDEX IF NOT EXISTS idx_outcomes_unit ON outcomes(unit_id);",
         "CREATE INDEX IF NOT EXISTS idx_components_outcome ON components(outcome_id);",
         "CREATE INDEX IF NOT EXISTS idx_grades_subject ON grades(subject_id);",
         "CREATE INDEX IF NOT EXISTS idx_units_grade ON units(grade_id);",
+        "CREATE INDEX IF NOT EXISTS idx_questions_outcome ON questions(outcome_id);",
     ]
 
     # Create DB Connection
@@ -96,6 +120,7 @@ def main():
         create_table(conn, sql_create_units_table)
         create_table(conn, sql_create_outcomes_table)
         create_table(conn, sql_create_components_table)
+        create_table(conn, sql_create_questions_table)
 
         for idx_sql in sql_create_indexes:
             create_table(conn, idx_sql)
