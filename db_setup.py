@@ -1,6 +1,6 @@
 
 import sqlite3
-import os
+
 import logging
 import config
 
@@ -31,8 +31,6 @@ def create_table(conn, create_table_sql):
         logger.error("SQL execution error: %s", e)
 
 def main():
-    database = DB_NAME
-
     # SQL Statements
     sql_create_subjects_table = """
     CREATE TABLE IF NOT EXISTS subjects (

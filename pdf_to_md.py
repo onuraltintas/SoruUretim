@@ -19,14 +19,14 @@ Kullanım:
     md/<DersAdı>.md   (md/ klasörü yoksa otomatik oluşturulur)
 
 Gereksinimler:
-    pip install openai pdf2image pymupdf
+    pip install openai pdf2image
 """
 
 import argparse
 import base64
 import datetime
 import glob
-import os
+
 import sys
 import time
 from io import BytesIO
@@ -48,7 +48,7 @@ OUT_DIR     = "md"
 DEFAULT_URL = "http://localhost:8000/v1"
 API_KEY     = "EMPTY"
 MODEL       = "Qwen/Qwen2.5-VL-72B-Instruct-AWQ"
-DPI         = 150
+DPI         = 200
 MAX_TOKENS  = 3000
 TEMPERATURE = 0.0
 
@@ -91,7 +91,7 @@ def check_server(api_url: str) -> bool:
         return False
 
 
-def process_page(client: OpenAI, image, page_num: int, model: str) -> str:
+def process_page(client: OpenAI, image, model: str, timeout: int = 300) -> str:
     """Tek bir PDF sayfasını VLM'e gönderir, Markdown metin döner."""
     b64 = encode_image_jpeg(image)
 
@@ -113,6 +113,7 @@ def process_page(client: OpenAI, image, page_num: int, model: str) -> str:
         ],
         max_tokens=MAX_TOKENS,
         temperature=TEMPERATURE,
+        timeout=timeout,
     )
 
     return response.choices[0].message.content
@@ -125,17 +126,31 @@ def convert_pdf(
     model: str,
     dpi: int,
     overwrite: bool,
+    timeout: int = 300,
 ) -> bool:
-    """PDF'i sayfa sayfa VLM'e gönderip .md dosyasına yazar."""
-    pdf_path = Path(pdf_path)
-    out_dir  = Path(out_dir)
+    """PDF'i sayfa sayfa VLM'e gönderip .md dosyasına yazar.
+
+    Her sayfa işlendikten sonra geçici checkpoint klasörüne kaydedilir.
+    İşlem kesilirse tekrar çalıştırıldığında kaldığı sayfadan devam eder.
+    """
+    pdf_path  = Path(pdf_path)
+    out_dir   = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_file = out_dir / f"{pdf_path.stem}.md"
+    out_file  = out_dir / f"{pdf_path.stem}.md"
+    ckpt_dir  = out_dir / f".ckpt_{pdf_path.stem}"
 
     # Zaten varsa ve overwrite=False ise atla
     if out_file.exists() and not overwrite:
         print(f"⏭  Atlandı (zaten mevcut): {out_file}")
         return True
+
+    # overwrite=True ise eski checkpoint'i temizle
+    if overwrite and ckpt_dir.exists():
+        for f in ckpt_dir.iterdir():
+            f.unlink()
+        ckpt_dir.rmdir()
+
+    ckpt_dir.mkdir(exist_ok=True)
 
     print(f"\n{'='*60}")
     print(f"📄 {pdf_path.name}")
@@ -153,33 +168,52 @@ def convert_pdf(
         return False
 
     client = OpenAI(base_url=api_url, api_key=API_KEY)
-    full_md = ""
     n = len(images)
 
     for i, image in enumerate(images, start=1):
+        ckpt_file = ckpt_dir / f"page_{i:04d}.md"
+
+        # Checkpoint varsa atla
+        if ckpt_file.exists():
+            print(f"  Sayfa {i:>3}/{n} — checkpoint mevcut, atlandı.")
+            continue
+
         t0 = time.time()
         sys.stdout.write(f"  Sayfa {i:>3}/{n} [{datetime.datetime.now().strftime('%H:%M:%S')}] … ")
         sys.stdout.flush()
 
         try:
-            content = process_page(client, image, i, model)
+            content = process_page(client, image, model, timeout=timeout)
             elapsed = time.time() - t0
             print(f"✓ ({elapsed:.1f}s, {len(content)} karakter)")
-            full_md += f"\n\n{content}"
         except Exception as e:
             elapsed = time.time() - t0
             print(f"✗ HATA ({elapsed:.1f}s): {e}")
-            full_md += f"\n\n<!-- Sayfa {i}: hata — {e} -->\n\n"
+            content = f"<!-- Sayfa {i}: hata — {e} -->"
 
-    # Kaydet
+        ckpt_file.write_text(content, encoding="utf-8")
+
+    # Tüm sayfaları birleştir
+    pages = [
+        (ckpt_dir / f"page_{i:04d}.md").read_text(encoding="utf-8")
+        for i in range(1, n + 1)
+        if (ckpt_dir / f"page_{i:04d}.md").exists()
+    ]
+
     try:
-        out_file.write_text(full_md.strip(), encoding="utf-8")
+        out_file.write_text("\n\n".join(pages).strip(), encoding="utf-8")
         size_kb = out_file.stat().st_size // 1024
         print(f"\n✅ Kaydedildi: {out_file} ({size_kb} KB)\n")
-        return True
     except Exception as e:
         print(f"❌ Dosya kaydedilemedi: {e}")
         return False
+
+    # Checkpoint klasörünü temizle
+    for f in ckpt_dir.iterdir():
+        f.unlink()
+    ckpt_dir.rmdir()
+
+    return True
 
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
@@ -235,7 +269,8 @@ def main():
     parser.add_argument("--api-url",   default=DEFAULT_URL, help=f"vLLM API URL (varsayılan: {DEFAULT_URL})")
     parser.add_argument("--model",     default=MODEL,       help=f"Model adı (varsayılan: {MODEL})")
     parser.add_argument("--out-dir",   default=OUT_DIR,     help=f"Çıktı klasörü (varsayılan: {OUT_DIR})")
-    parser.add_argument("--dpi",       type=int, default=DPI, help=f"Render DPI (varsayılan: {DPI})")
+    parser.add_argument("--dpi",       type=int, default=DPI,  help=f"Render DPI (varsayılan: {DPI})")
+    parser.add_argument("--timeout",   type=int, default=300,  help="Sayfa başına VLM timeout saniyesi (varsayılan: 300)")
 
     args = parser.parse_args()
 
@@ -274,6 +309,7 @@ def main():
             model=args.model,
             dpi=args.dpi,
             overwrite=args.overwrite,
+            timeout=args.timeout,
         )
         if success:
             ok += 1

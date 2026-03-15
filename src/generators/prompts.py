@@ -31,12 +31,17 @@ net ve en fazla 2-3 cümle uzunluğunda olmalıdır. Bağlamı (senaryoyu)
 sorunun içinde tekrar edip öğrencinin okuma yükünü artırma. Sadece ölçülmek 
 istenen beceriyi hedefleyen yalın bir yönerge veya soru cümlesi kur.
 
+- Sorularda/Görevlerde gerekirse grafik, tablo, figür, şablon gibi görsellerin kullanılmasını kurgula.
+Eğer soru bir görsel gerektiriyorsa, soru metninde görselin geleceği yere [GÖRSEL_BURAYA] etiketini koy
+VE soru metninin en altına "GÖRSEL ÜRETİM PROMPTU: <bu görseli çizecek bir tasarımcıya veya
+Midjourney/DALL-E gibi bir yapay zekâya verilmek üzere yazılmış detaylı betimleme>" satırını ekle.
+Görsel gerekmiyorsa bu kısmı ekleme.
+
 - SADECE senden istenen JSON çıktısını ver. Başka hiçbir açıklama, giriş veya çıkış cümlesi yazma.
 
 Cevabını SADECE geçerli JSON formatında ver; başka hiçbir metin ekleme. JSON şeması:
 {
-  "question_text": "<soru metni. Görselin geleceği yere [GÖRSEL_BURAYA] etiketini koy.>",
-  "visual_generation_prompt": "<Eğer soruda görsel varsa, bu görseli yapay zekaya ürettirmek için kullanılacak İngilizce veya Türkçe detaylı prompt. Görsel yoksa bu alanı boş (null) bırak.>",
+  "question_text": "<soru metni. Görsel varsa [GÖRSEL_BURAYA] etiketi ve en alta GÖRSEL ÜRETİM PROMPTU satırı dahil.>",
   "cognitive_level": "<Bloom düzeyi: Hatırlama/Anlama/Uygulama/Analiz/Değerlendirme/Yaratma>",
   "rubric": [{"criteria": "<kriter>", "points": <puan>}, ...],
   "correct_answer_summary": "<model cevap özeti>"

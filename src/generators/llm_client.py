@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-import time
+
 from typing import Any
 
 import requests
@@ -21,7 +21,7 @@ from src.generators import prompts
 PROVIDER_DEFAULTS: dict[str, dict[str, Any]] = {
     "local": {
         "base_url": "http://localhost:11434/v1",
-        "model": "qwen2.5:72b",
+        "model": "nemotron-3-super:120b",
         "api_key": "EMPTY",
     },
     "vllm": {
@@ -114,6 +114,7 @@ class LLMClient:
             "model": self.model,
             "messages": messages,
             "temperature": temperature,
+            "max_tokens": 2048,
         }
         url = f"{self.base_url}/chat/completions"
         resp = requests.post(url, json=payload, headers=self._headers(), timeout=self.timeout)

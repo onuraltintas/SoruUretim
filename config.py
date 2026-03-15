@@ -16,9 +16,3 @@ OLLAMA_MODEL   = os.getenv("OLLAMA_MODEL",   "qwen3.5:122b")
 
 # --- Veritabanı ---
 DB_NAME = os.getenv("DB_NAME", "maarif_gen.db")
-
-# --- PDF Çıkarım & Kalite ---
-LLM_EXTRACTION_FALLBACK = os.getenv("LLM_EXTRACTION_FALLBACK", "true").lower() == "true"
-MIN_QUALITY_SCORE       = int(os.getenv("MIN_QUALITY_SCORE", "40"))
-OCR_ENABLED             = os.getenv("OCR_ENABLED", "false").lower() == "true"
-LLM_FALLBACK_MAX_PAGES  = int(os.getenv("LLM_FALLBACK_MAX_PAGES", "40"))

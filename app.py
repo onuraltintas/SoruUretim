@@ -6,14 +6,14 @@ import logging
 import pandas as pd
 import json
 import time
-from io import BytesIO
+
 from docx import Document
 from src.generators.llm_client import LLMClient, PROVIDER_DEFAULTS
 from src.generators.prompts import QUESTION_SYSTEM_MSG
 import config
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
