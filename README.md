@@ -95,6 +95,5 @@ docker rm -f vllm_server ; docker run -d --gpus all \
   --reasoning-parser qwen3 \
   --default-chat-template-kwargs '{"enable_thinking": true}'
 ```
-
 ---
 *Bu proje, Türkiye Yüzyılı Maarif Modeli'nin dijital dönüşümü ve ölçme-değerlendirme süreçlerinin yapay zekâ ile desteklenmesi amacıyla geliştirilmiştir.*
